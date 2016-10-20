@@ -4,7 +4,7 @@ import random
 
 import discord
 
-import googleimages
+import googleimages, quotes
 from classes import Memo
 
 client = discord.Client()
@@ -22,6 +22,7 @@ async def on_ready():
     print('------')
 
 
+# TODO: Learn how to asyncio properly
 @client.event
 async def on_message(message):
     args = ()
@@ -31,11 +32,12 @@ async def on_message(message):
         async for log in client.logs_from(message.channel, limit=100):
             if log.author == message.author:
                 counter += 1
-
         await client.edit_message(tmp, 'You have {} messages.'.format(counter))
+
     elif message.content.startswith('!sleep'):
         await asyncio.sleep(5)
         await client.send_message(message.channel, 'Done sleeping')
+
     elif message.content.startswith('!memo'):
         tmp = await client.send_message(message.channel, 'Memo being processed...!')
         args = message.content.split(' ', 2)
@@ -50,11 +52,16 @@ async def on_message(message):
             await client.edit_message(tmp, 'Memo added for {}.'.format(memo.to))
         else:
             await client.edit_message(tmp, 'Failed to find a user with that username in the channel.')
+
     elif message.content.startswith('!help'):
         await client.send_message(message.channel, 'Help not received')
+
     elif message.content.startswith('!image'):
         tmp = await client.send_message(message.channel, 'Finding image...')
         args = message.content.split(' ', 1)
+        if len(args) != 2:
+            await client.edit_message(tmp, 'Error: Parameter required.')
+            return
         (result, error) = googleimages.search(args[1], creds, 1)
         if error == 0:
             await client.edit_message(tmp, '{},\n{}'.format(message.author.mention, result))
@@ -63,12 +70,61 @@ async def on_message(message):
     elif message.content.startswith('!rimage'):
         tmp = await client.send_message(message.channel, 'Finding image...')
         args = message.content.split(' ', 1)
+        if len(args) != 2:
+            await client.edit_message(tmp, 'Error: Parameter required.')
+            return
         rand = random.randint(0, 9)
         (result, error) = googleimages.search(args[1], creds, rand)
         if error == 0:
             await client.edit_message(tmp, '{},\n{}'.format(message.author.mention, result))
         else:
             await client.edit_message(tmp, 'Error:\n{}'.format(result))
+
+    elif message.content.startswith('!username'):
+        if len(message.mentions) == 1:
+            await client.send_message(message.channel, 'Username for specified user is: ``{}``.'.format(message.mentions[0].name))
+        else:
+            await client.send_message(message.channel, 'Error: You didn\'t specify a user, or specified too many.')
+
+    elif message.content.startswith('!addquote'):
+        tmp = await client.send_message(message.channel, 'Attempting to add quote...')
+        args = message.content.split(' ', 1)
+        if len(args) != 2:
+            await client.edit_message(tmp, 'Error: Parameter required.')
+            return
+        try:
+            msg = await client.get_message(message.channel, args[1])
+        except discord.NotFound:
+            await client.edit_message(tmp, 'Error: The message with that ID could not be found.')
+        except discord.Forbidden:
+            await client.edit_message(tmp, 'Error: Was unable to get the message.')
+        else:
+            if quotes.add_quote(msg.content, msg.author.id, msg.id) == 1:
+                await client.edit_message(tmp, 'Successfully added quote for {}.'.format(msg.author.name))
+            else:
+                await client.edit_message(tmp, 'Failed to add quote for {}.'.format(msg.author.name))
+    elif message.content.startswith('!quote'):
+        tmp = await client.send_message(message.channel, 'Fetching quote...')
+        args = message.content.split(' ', 1)
+        if len(args) != 2:
+            await client.edit_message(tmp, 'Error: Parameter required.')
+            return
+        member = discord.utils.find(lambda m: m.name == args[1], message.channel.server.members)
+        (quote,_id) = quotes.get_quote(member.id)
+        if quote is None:
+            await client.edit_message(tmp, 'Error: Could not find any quotes for {}.'.format(member.name))
+        else:
+            await client.edit_message(tmp, '``#{}``:\n```{}```'.format(_id,quote))
+    elif message.content.startswith('!delquote'):
+        tmp = await client.send_message(message.channel, 'Attempting to delete quote...')
+        args = message.content.split(' ', 1)
+        if len(args) != 2:
+            await client.edit_message(tmp, 'Error: Parameter required.')
+            return
+        if quotes.del_quote(args[1]) == 1:
+            await client.edit_message(tmp, 'Successfully deleted quote #{}.'.format(args[1]))
+        else:
+            await client.edit_message(tmp, 'Failed to delete quote #{}.'.format(args[1]))
 
 
 @client.event
@@ -85,7 +141,6 @@ async def on_member_update(before, after):
                 await client.send_message(memo.channel, "{}: {} sent you a message:\n```{}```".format(memo.to.mention,
                                                                                                       memo.sender.mention,
                                                                                                       memo.message))
-
 
 @client.event
 async def on_typing(channel, user, when):
