@@ -15,6 +15,7 @@ tell = []
 
 @client.event
 async def on_ready():
+    random.seed()
     print('Logged in as')
     print(client.user.name)
     print(client.user.id)
@@ -62,7 +63,8 @@ async def on_message(message):
     elif message.content.startswith('!imager'):
         tmp = await client.send_message(message.channel, 'Finding image...')
         args = message.content.split(' ', 1)
-        (result, error) = googleimages.search(args[1], creds, random.randint(0, 9))
+        rand = random.randint(0, 9)
+        (result, error) = googleimages.search(args[1], creds, rand)
         if error == 0:
             await client.edit_message(tmp, '{},\n{}'.format(message.author.mention, result))
         else:

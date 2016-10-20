@@ -14,7 +14,6 @@ def _imageSearch(query, creds):
 
 def search(query, creds, num):
     image = _imageSearch(query, creds)
-    print(num)
     if 'items' in image.keys():
         return (image['items'][num]['link'], 0)
     else:
