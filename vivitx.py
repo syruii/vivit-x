@@ -60,7 +60,7 @@ async def on_message(message):
             await client.edit_message(tmp, '{},\n{}'.format(message.author.mention, result))
         else:
             await client.edit_message(tmp, 'Error:\n{}'.format(result))
-    elif message.content.startswith('!imager'):
+    elif message.content.startswith('!rimage'):
         tmp = await client.send_message(message.channel, 'Finding image...')
         args = message.content.split(' ', 1)
         rand = random.randint(0, 9)
