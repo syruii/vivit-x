@@ -12,7 +12,7 @@ def _query_db(query, args=(), one=False):
     success = cur.rowcount
     db.commit()
     cur.close()
-    return ((rv[0],success) if rv else None) if one else (rv,success)
+    return ((rv[0], success) if rv else None) if one else (rv, success)
 
 
 def add_quote(message,author,_id):
@@ -22,9 +22,8 @@ def add_quote(message,author,_id):
 # TODO: Add searching quote functionality, and specifying a quote
 def get_quote(author):
     (quotes,success) = _query_db ('SELECT * FROM Quote WHERE Author = (?)', [author])
-    if success == 1:
+    if quotes:
         rand = random.randrange(0,len(quotes))
-        print(quotes)
         return quotes[rand]['Content'], quotes[rand]['ID']
     else:
         return None, None

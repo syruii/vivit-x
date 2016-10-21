@@ -4,14 +4,13 @@ import random, re
 
 import discord
 
-import googleimages, quotes, danbooru
+import googleimages, quotes, danbooru, gelbooru
 from classes import Memo
 
 client = discord.Client()
 with open('credentials.json') as json_data:
     creds = json.load(json_data)
 tell = []
-
 
 @client.event
 async def on_ready():
@@ -26,7 +25,7 @@ async def on_ready():
 @client.event
 async def on_message(message):
     args = ()
-    if message.content.startswith('!test'):
+    if message.content.startswith('-test'):
         counter = 0
         tmp = await client.send_message(message.channel, 'Calculating messages...')
         async for log in client.logs_from(message.channel, limit=100):
@@ -34,11 +33,11 @@ async def on_message(message):
                 counter += 1
         await client.edit_message(tmp, 'You have {} messages.'.format(counter))
 
-    elif message.content.startswith('!sleep'):
+    elif message.content.startswith('-sleep'):
         await asyncio.sleep(5)
         await client.send_message(message.channel, 'Done sleeping')
 
-    elif message.content.startswith('!memo'):
+    elif message.content.startswith('-memo'):
         tmp = await client.send_message(message.channel, 'Memo being processed...!')
         args = message.content.split(' ', 2)
         if len(args) != 3:
@@ -53,10 +52,10 @@ async def on_message(message):
         else:
             await client.edit_message(tmp, 'Failed to find a user with that username in the channel.')
 
-    elif message.content.startswith('!help'):
+    elif message.content.startswith('-help'):
         await client.send_message(message.channel, 'Help not received')
 
-    elif message.content.startswith('!image'):
+    elif message.content.startswith('-image'):
         tmp = await client.send_message(message.channel, 'Finding image...')
         args = message.content.split(' ', 1)
         if len(args) != 2:
@@ -67,7 +66,7 @@ async def on_message(message):
             await client.edit_message(tmp, '{},\n{}'.format(message.author.mention, result))
         else:
             await client.edit_message(tmp, 'Error:\n{}'.format(result))
-    elif message.content.startswith('!rimage'):
+    elif message.content.startswith('-rimage'):
         tmp = await client.send_message(message.channel, 'Finding image...')
         args = message.content.split(' ', 1)
         if len(args) != 2:
@@ -80,13 +79,13 @@ async def on_message(message):
         else:
             await client.edit_message(tmp, 'Error: {}'.format(result))
 
-    elif message.content.startswith('!username'):
+    elif message.content.startswith('-username'):
         if len(message.mentions) == 1:
             await client.send_message(message.channel, 'Username for specified user is: ``{}``.'.format(message.mentions[0].name))
         else:
             await client.send_message(message.channel, 'Error: You didn\'t specify a user, or specified too many.')
 
-    elif message.content.startswith('!addquote'):
+    elif message.content.startswith('-addquote'):
         tmp = await client.send_message(message.channel, 'Attempting to add quote...')
         args = message.content.split(' ', 1)
         if len(args) != 2:
@@ -103,7 +102,7 @@ async def on_message(message):
                 await client.edit_message(tmp, 'Successfully added quote for {}.'.format(msg.author.name))
             else:
                 await client.edit_message(tmp, 'Failed to add quote for {}.'.format(msg.author.name))
-    elif message.content.startswith('!quote'):
+    elif message.content.startswith('-quote'):
         tmp = await client.send_message(message.channel, 'Fetching quote...')
         args = message.content.split(' ', 1)
         if len(args) != 2:
@@ -115,7 +114,7 @@ async def on_message(message):
             await client.edit_message(tmp, 'Error: Could not find any quotes for {}.'.format(member.name))
         else:
             await client.edit_message(tmp, '``#{}``:\n```{}```'.format(_id,quote))
-    elif message.content.startswith('!delquote'):
+    elif message.content.startswith('-delquote'):
         tmp = await client.send_message(message.channel, 'Attempting to delete quote...')
         args = message.content.split(' ', 1)
         if len(args) != 2:
@@ -126,13 +125,13 @@ async def on_message(message):
         else:
             await client.edit_message(tmp, 'Failed to delete quote #{}.'.format(args[1]))
 
-    elif message.content.startswith('!sfwdanbooru'):
+    elif message.content.startswith('-sfwdanbooru'):
         await danbooru_search(message,method='sfw')
-    elif message.content.startswith('!nsfwdanbooru'):
+    elif message.content.startswith('-nsfwdanbooru'):
         await danbooru_search(message, method='nsfw')
-    elif message.content.startswith('!danbooru'):
+    elif message.content.startswith('-danbooru'):
         await danbooru_search(message, method='other')
-    elif message.content.startswith('!tagsearch'):
+    elif message.content.startswith('-tagsearch'):
         tmp = await client.send_message(message.channel, 'Searching for tags...')
         args = message.content.split(' ', 1)
         (result, error) = danbooru.tagsearch(args[1])
@@ -141,6 +140,29 @@ async def on_message(message):
         else:
             await client.edit_message(tmp, 'Error: {}'.format(result))
 
+    elif message.content.startswith('-sfwgelbooru'):
+        await gelbooru_search(message,method='sfw')
+    elif message.content.startswith('-nsfwgelbooru'):
+        await gelbooru_search(message, method='nsfw')
+    elif message.content.startswith('-gelbooru'):
+        await gelbooru_search(message, method='other')
+
+    elif message.content.startswith('-nickname'):
+        tmp = await client.send_message(message.channel, 'Changing nickname ~~')
+        args = message.content.split(' ', 1)
+        if len(args) != 2:
+            await client.edit_message(tmp, 'Error: Incorrect number of parameters provided.')
+            return
+        me = message.server.get_member(client.user.id)
+        await client.change_nickname(me,args[1])
+        await client.edit_message(tmp, 'Changed nickname to {}'.format(args[1]))
+
+    elif message.content.startswith('#refresh'):
+        tmp = await client.send_message(message.channel, 'Updating to newest settings')
+        fh = open('profile.png', 'rb')
+        await client.edit_profile(username=creds['username'],avatar=fh.read())
+        fh.close()
+        await client.edit_message(tmp, 'Finished updating!')
 
 async def danbooru_search (message, method):
     tmp = await client.send_message(message.channel, 'Searching for posts in Danbooru...')
@@ -149,13 +171,32 @@ async def danbooru_search (message, method):
         message.content = re.sub(r'page=(\d+)', '', message.content)
         page = int(m.group(1))
     else:
-        page = 0
+        page = 1
     args = message.content.split(' ', 1)
     if len(args) != 2:
         await client.edit_message(tmp, 'Error: Incorrect number of parameters provided.')
         return
     else:
         (result, error) = danbooru.search(method=method, query=args[1], page=page)
+        if error == 0:
+            await client.edit_message(tmp, '{},\n{}'.format(message.author.mention, result))
+        else:
+            await client.edit_message(tmp, 'Error: {}'.format(result))
+
+async def gelbooru_search (message, method):
+    tmp = await client.send_message(message.channel, 'Searching for posts in Gelbooru...')
+    m = re.search(r'page=(\d+)', message.content)
+    if m:
+        message.content = re.sub(r'page=(\d+)', '', message.content)
+        page = int(m.group(1))
+    else:
+        page = 1
+    args = message.content.split(' ', 1)
+    if len(args) != 2:
+        await client.edit_message(tmp, 'Error: Incorrect number of parameters provided.')
+        return
+    else:
+        (result, error) = gelbooru.search(method=method, query=args[1], page=page)
         if error == 0:
             await client.edit_message(tmp, '{},\n{}'.format(message.author.mention, result))
         else:

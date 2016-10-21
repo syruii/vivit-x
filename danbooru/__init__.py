@@ -1,21 +1,17 @@
-import json, urllib, pprint
+import json, pprint
 import requests, random
 
 
 def _imageSearch(args,method,page):
-    if len(args) == 1:
-        payload = {'tags': args[0], 'limit': 100, 'page': page}
-    else:
-        payload = {'tags': [args[0], args[1]], 'limit': 100, 'page': page}
+    payload = {'tags': args, 'limit': 50, 'page': page}
     r = requests.get("http://danbooru.donmai.us/posts.json", params=payload)
-
     if r.status_code != 200:
         return -1
-
     images = json.loads(r.text)
 
     if not images:
         return None
+
     results = []
     if method == "nsfw":
         for image in images:
@@ -25,7 +21,8 @@ def _imageSearch(args,method,page):
         for image in images:
             if image['rating'] == 's':
                 results.append(image)
-
+    else:
+        results = images
     rand = random.randrange(0, len(results))
     if 'large_file_url' in results[rand].keys():
         return "https://danbooru.donmai.us" + results[rand]['large_file_url']
@@ -48,8 +45,7 @@ def _tagSearch(arg):
 
 
 def search(method,query,page):
-    args = query.split(' ', 1)
-    result = _imageSearch(args,method,page)
+    result = _imageSearch(query,method,page)
     if result is None:
         return "No images found for specified tag(s).",1
     elif result == -1:
