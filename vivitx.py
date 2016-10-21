@@ -47,6 +47,7 @@ async def on_message(message):
         if len(args) != 3:
             await client.edit_message(tmp, 'Incorrect number of arguments provided.')
             return
+        args[1],
         member = discord.utils.find(lambda m: m.name == args[1], message.channel.server.members)
         if member is not None:
             global tell
@@ -178,7 +179,7 @@ async def danbooru_search (message, method):
         message.content = re.sub(r'page=(\d+)', '', message.content)
         page = int(m.group(1))
     else:
-        page = 1
+        page = 0
     args = message.content.split(' ', 1)
     if len(args) != 2:
         await client.edit_message(tmp, 'Error: Incorrect number of parameters provided.')
@@ -197,7 +198,7 @@ async def gelbooru_search (message, method):
         message.content = re.sub(r'page=(\d+)', '', message.content)
         page = int(m.group(1))
     else:
-        page = 1
+        page = 0
     args = message.content.split(' ', 1)
     if len(args) != 2:
         await client.edit_message(tmp, 'Error: Incorrect number of parameters provided.')

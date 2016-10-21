@@ -1,11 +1,13 @@
-import pprint
 from xml.etree import cElementTree
-import requests, random
+
+import random
+import requests
 
 
 def _imageSearch(args,method,page):
     payload = {'tags': args, 'limit': 50, 'page': 'dapi', 'pid': page, 's': 'post', 'q': 'index'}
     r = requests.get("http://gelbooru.com/index.php", params=payload)
+    print(r.url)
     if r.status_code != 200:
         return -1
     tree = cElementTree.fromstring(r.text)
