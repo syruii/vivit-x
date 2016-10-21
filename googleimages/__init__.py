@@ -1,4 +1,4 @@
-import json
+import json, urllib
 
 import requests
 
@@ -12,7 +12,8 @@ def _imageSearch(query, creds):
     return image
 
 
-def search(query, creds, num):
+def search(query, creds, num=1):
+    query = urllib.parse.quote_plus(query)
     image = _imageSearch(query, creds)
     if 'items' in image.keys():
         return (image['items'][num]['link'], 0)

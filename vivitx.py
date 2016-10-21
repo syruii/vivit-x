@@ -4,7 +4,7 @@ import random
 
 import discord
 
-import googleimages, quotes
+import googleimages, quotes, youtube
 from classes import Memo
 
 client = discord.Client()
@@ -62,7 +62,7 @@ async def on_message(message):
         if len(args) != 2:
             await client.edit_message(tmp, 'Error: Parameter required.')
             return
-        (result, error) = googleimages.search(args[1], creds, 1)
+        (result, error) = googleimages.search(args[1], creds)
         if error == 0:
             await client.edit_message(tmp, '{},\n{}'.format(message.author.mention, result))
         else:
@@ -126,6 +126,13 @@ async def on_message(message):
         else:
             await client.edit_message(tmp, 'Failed to delete quote #{}.'.format(args[1]))
 
+    elif message.content.startswith('!youtube'):
+        tmp = await client.send_message(message.channel, 'Fetching video...')
+        args = message.content.split(' ', 1)
+        if len(args) != 2:
+            await client.edit_message(tmp, 'Error: Parameter required.')
+            return
+        youtube.search(args[1])
 
 @client.event
 async def on_member_update(before, after):
