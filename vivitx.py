@@ -219,7 +219,7 @@ async def on_member_update(before, after):
             memos.append(_memo)
     for memo in memos:
         if memo is not None:
-            if after.server == memo.channel.server and after.status == 'online':
+            if after.server == memo.channel.server and after.status == discord.Status.online:
                 tell.remove(memo)
                 await client.send_message(memo.channel, "{}: {} sent you a message:\n```{}```".format(memo.to.mention,
                                                                                                       memo.sender.mention,
