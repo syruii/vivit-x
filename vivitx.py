@@ -1,10 +1,14 @@
 import asyncio
 import json
-import random, re
+import random
+import re
 
 import discord
 
-import googleimages, quotes, danbooru, gelbooru
+import danbooru
+import gelbooru
+import googleimages
+import quotes
 from classes import Memo
 
 client = discord.Client()
@@ -109,6 +113,9 @@ async def on_message(message):
             await client.edit_message(tmp, 'Error: Parameter required.')
             return
         member = discord.utils.find(lambda m: m.name == args[1], message.channel.server.members)
+        if member is None:
+            await client.edit_message(tmp, 'Error: Could not find any user called {}.'.format(args[1]))
+            return
         (quote,_id) = quotes.get_quote(member.id)
         if quote is None:
             await client.edit_message(tmp, 'Error: Could not find any quotes for {}.'.format(member.name))
@@ -180,7 +187,7 @@ async def danbooru_search (message, method):
         (result, error) = danbooru.search(method=method, query=args[1], page=page)
         if error == 0:
             await client.edit_message(tmp, '{},\n{}'.format(message.author.mention, result))
-        else:
+        else
             await client.edit_message(tmp, 'Error: {}'.format(result))
 
 async def gelbooru_search (message, method):
