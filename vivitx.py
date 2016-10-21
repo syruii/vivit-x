@@ -187,7 +187,7 @@ async def danbooru_search (message, method):
         (result, error) = danbooru.search(method=method, query=args[1], page=page)
         if error == 0:
             await client.edit_message(tmp, '{},\n{}'.format(message.author.mention, result))
-        else
+        else:
             await client.edit_message(tmp, 'Error: {}'.format(result))
 
 async def gelbooru_search (message, method):
