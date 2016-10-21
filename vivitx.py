@@ -1,10 +1,10 @@
 import asyncio
 import json
-import random
+import random, re
 
 import discord
 
-import googleimages, quotes, youtube
+import googleimages, quotes, danbooru
 from classes import Memo
 
 client = discord.Client()
@@ -78,7 +78,7 @@ async def on_message(message):
         if error == 0:
             await client.edit_message(tmp, '{},\n{}'.format(message.author.mention, result))
         else:
-            await client.edit_message(tmp, 'Error:\n{}'.format(result))
+            await client.edit_message(tmp, 'Error: {}'.format(result))
 
     elif message.content.startswith('!username'):
         if len(message.mentions) == 1:
@@ -126,13 +126,41 @@ async def on_message(message):
         else:
             await client.edit_message(tmp, 'Failed to delete quote #{}.'.format(args[1]))
 
-    elif message.content.startswith('!youtube'):
-        tmp = await client.send_message(message.channel, 'Fetching video...')
+    elif message.content.startswith('!sfwdanbooru'):
+        await danbooru_search(message,method='sfw')
+    elif message.content.startswith('!nsfwdanbooru'):
+        await danbooru_search(message, method='nsfw')
+    elif message.content.startswith('!danbooru'):
+        await danbooru_search(message, method='other')
+    elif message.content.startswith('!tagsearch'):
+        tmp = await client.send_message(message.channel, 'Searching for tags...')
         args = message.content.split(' ', 1)
-        if len(args) != 2:
-            await client.edit_message(tmp, 'Error: Parameter required.')
-            return
-        youtube.search(args[1])
+        (result, error) = danbooru.tagsearch(args[1])
+        if error == 0:
+            await client.edit_message(tmp, '{},\n{}'.format(message.author.mention, result))
+        else:
+            await client.edit_message(tmp, 'Error: {}'.format(result))
+
+
+async def danbooru_search (message, method):
+    tmp = await client.send_message(message.channel, 'Searching for posts in Danbooru...')
+    m = re.search(r'page=(\d+)', message.content)
+    if m:
+        message.content = re.sub(r'page=(\d+)', '', message.content)
+        page = int(m.group(1))
+    else:
+        page = 0
+    args = message.content.split(' ', 1)
+    if len(args) != 2:
+        await client.edit_message(tmp, 'Error: Incorrect number of parameters provided.')
+        return
+    else:
+        (result, error) = danbooru.search(method=method, query=args[1], page=page)
+        if error == 0:
+            await client.edit_message(tmp, '{},\n{}'.format(message.author.mention, result))
+        else:
+            await client.edit_message(tmp, 'Error: {}'.format(result))
+
 
 @client.event
 async def on_member_update(before, after):
