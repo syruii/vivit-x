@@ -113,22 +113,26 @@ async def on_message(message):
                 quote_ids = [msg.id]
                 for postid in args[2:]:
                     try:
-                        msg = await client.get_message(message.channel, postid)
                         tmp2 = await client.send_message(message.channel, 'Attempting to add secondary quotes...')
+                        msg = await client.get_message(message.channel, postid)
                     except discord.NotFound:
                         await client.edit_message(tmp2, 'Error: The message with that ID could not be found.')
                     except discord.Forbidden:
                         await client.edit_message(tmp2, 'Error: Was unable to get the message.')
                     else:
-                        await asyncio.sleep(2)
-                        await client.delete_message(tmp2)
-                        quote_ids.append(msg.id)
-                        quote.append(msg.content)
+                        if msg.author.id != quote_author_id:
+                            await client.edit_message(tmp2, 'Error: The author of that message is not consistent with the first message.')
+                            continue
+                        else:
+                            await asyncio.sleep(2)
+                            await client.delete_message(tmp2)
+                            quote_ids.append(msg.id)
+                            quote.append(msg.content)
                 quote_ids.sort()
                 string = "-".join(quote_ids)
                 quote_id = md5(string.encode()).hexdigest()
         if quotes.add_quote("\n".join(quote), quote_author_id, quote_id) == 1:
-            await client.edit_message(tmp, 'Successfully added quote for {}.'.format(quote_author))
+            await client.edit_message(tmp, 'Successfully added quote #{} for {}.'.format(quote_id,quote_author))
         else:
             await client.edit_message(tmp, 'Failed to add quote for {}.'.format(quote_author))
 
@@ -158,6 +162,17 @@ async def on_message(message):
             await client.edit_message(tmp, 'Successfully deleted quote #{}.'.format(args[1]))
         else:
             await client.edit_message(tmp, 'Failed to delete quote #{}.'.format(args[1]))
+    elif message.content.startswith('-idquote'):
+        tmp = await client.send_message(message.channel, 'Fetching quote...')
+        args = message.content.split(' ', 1)
+        if len(args) != 2:
+            await client.edit_message(tmp, 'Error: Parameter required.')
+            return
+        (quote, id) = quotes.get_quote_id(args[1])
+        if quote is None:
+            await client.edit_message(tmp, 'Error: Could not find any quote with id #{}.'.format(args[1]))
+        else:
+            await client.edit_message(tmp, '``#{}``:\n```{}```'.format(id, quote))
 
     elif message.content.startswith('-sfwdanbooru'):
         await danbooru_search(message,method='sfw')

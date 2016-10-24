@@ -1,5 +1,5 @@
-import sqlite3
 import random
+import sqlite3
 
 DATABASE = 'quotes.db'
 
@@ -28,6 +28,12 @@ def get_quote(author):
     else:
         return None, None
 
+def get_quote_id(id):
+    (quote, success) = _query_db('SELECT * FROM Quote WHERE ID = (?)', [id], one=True)
+    if quote:
+        return quote['Content'], quote['ID']
+    else:
+        return None, None
 
 def del_quote(_id):
     (a,success) = _query_db('DELETE FROM Quote WHERE ID = (?)', [_id])
