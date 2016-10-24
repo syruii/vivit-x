@@ -116,13 +116,15 @@ async def on_message(message):
                         tmp2 = await client.send_message(message.channel, 'Attempting to add secondary quotes...')
                         msg = await client.get_message(message.channel, postid)
                     except discord.NotFound:
-                        await client.edit_message(tmp2, 'Error: The message with that ID could not be found.')
+                        await client.edit_message(tmp2, 'Error: The message with that ID could not be found. Skipping.')
                     except discord.Forbidden:
-                        await client.edit_message(tmp2, 'Error: Was unable to get the message.')
+                        await client.edit_message(tmp2, 'Error: Was unable to get the message. Skipping.')
                     else:
                         if msg.author.id != quote_author_id:
-                            await client.edit_message(tmp2, 'Error: The author of that message is not consistent with the first message.')
-                            continue
+                            await client.edit_message(tmp2, 'Error: The author of that message is not consistent with '
+                                                            'the first message.')
+                            await client.edit_message(tmp, 'Error: Inconsistent authors. Terminating.')
+                            return
                         else:
                             await asyncio.sleep(2)
                             await client.delete_message(tmp2)
