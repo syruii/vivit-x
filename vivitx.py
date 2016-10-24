@@ -2,6 +2,7 @@ import asyncio
 import json
 import random
 import re
+from hashlib import md5
 
 import discord
 
@@ -92,21 +93,46 @@ async def on_message(message):
 
     elif message.content.startswith('-addquote'):
         tmp = await client.send_message(message.channel, 'Attempting to add quote...')
-        args = message.content.split(' ', 1)
-        if len(args) != 2:
+        args = message.content.split(' ')
+        if len(args) < 2:
             await client.edit_message(tmp, 'Error: Parameter required.')
             return
+
         try:
             msg = await client.get_message(message.channel, args[1])
+            quote = [msg.content]
+            quote_author_id = msg.author.id
+            quote_author = msg.author.name
+            quote_id = msg.id
         except discord.NotFound:
             await client.edit_message(tmp, 'Error: The message with that ID could not be found.')
         except discord.Forbidden:
             await client.edit_message(tmp, 'Error: Was unable to get the message.')
         else:
-            if quotes.add_quote(msg.content, msg.author.id, msg.id) == 1:
-                await client.edit_message(tmp, 'Successfully added quote for {}.'.format(msg.author.name))
-            else:
-                await client.edit_message(tmp, 'Failed to add quote for {}.'.format(msg.author.name))
+            if len(args) > 2:
+                quote_ids = [msg.id]
+                for postid in args[2:]:
+                    try:
+                        msg = await client.get_message(message.channel, postid)
+                        tmp2 = await client.send_message(message.channel, 'Attempting to add secondary quotes...')
+                    except discord.NotFound:
+                        await client.edit_message(tmp2, 'Error: The message with that ID could not be found.')
+                    except discord.Forbidden:
+                        await client.edit_message(tmp2, 'Error: Was unable to get the message.')
+                    else:
+                        await asyncio.sleep(2)
+                        await client.delete_message(tmp2)
+                        quote_ids.append(msg.id)
+                        quote.append(msg.content)
+                quote_ids.sort()
+                string = "-".join(quote_ids)
+                quote_id = md5(string.encode()).hexdigest()
+        if quotes.add_quote("\n".join(quote), quote_author_id, quote_id) == 1:
+            await client.edit_message(tmp, 'Successfully added quote for {}.'.format(quote_author))
+        else:
+            await client.edit_message(tmp, 'Failed to add quote for {}.'.format(quote_author))
+
+
     elif message.content.startswith('-quote'):
         tmp = await client.send_message(message.channel, 'Fetching quote...')
         args = message.content.split(' ', 1)
