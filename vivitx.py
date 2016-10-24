@@ -110,6 +110,9 @@ async def on_message(message):
             await client.edit_message(tmp, 'Error: Was unable to get the message.')
         else:
             if len(args) > 2:
+                if len(args) > 13:
+                    await client.edit_message(tmp, 'Error: Too many messages for one quote.')
+                    return
                 quote_ids = [msg.id]
                 for postid in args[2:]:
                     try:
@@ -126,7 +129,7 @@ async def on_message(message):
                             await client.edit_message(tmp, 'Error: Inconsistent authors. Terminating.')
                             return
                         else:
-                            await asyncio.sleep(2)
+                            await asyncio.sleep(1)
                             await client.delete_message(tmp2)
                             quote_ids.append(msg.id)
                             quote.append(msg.content)
