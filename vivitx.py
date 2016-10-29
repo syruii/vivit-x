@@ -218,6 +218,13 @@ async def on_message(message):
         fh.close()
         await client.edit_message(tmp, 'Finished updating!')
 
+    elif message.content.startswith('#ban'):
+        tmp = await client.send_message(message.channel, 'Telling user to fuck off...')
+        args = message.content.split(' ', 1)
+        member = discord.utils.find(lambda m: m.name == args[1], message.channel.server.members)
+        await client.ban(member)
+        await client.edit_message(tmp, 'Fuck off {}.' .format(member.name))
+
 async def danbooru_search (message, method):
     tmp = await client.send_message(message.channel, 'Searching for posts in Danbooru...')
     m = re.search(r'page=(\d+)', message.content)
