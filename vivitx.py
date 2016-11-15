@@ -141,7 +141,6 @@ async def on_message(message):
         else:
             await client.edit_message(tmp, 'Failed to add quote for {}.'.format(quote_author))
 
-
     elif message.content.startswith('-quote'):
         tmp = await client.send_message(message.channel, 'Fetching quote...')
         args = message.content.split(' ', 1)
@@ -211,6 +210,18 @@ async def on_message(message):
         await client.change_nickname(me,args[1])
         await client.edit_message(tmp, 'Changed nickname to {}'.format(args[1]))
 
+    elif message.content.startswith('-avatar'):
+        tmp = await client.send_message(message.channel, 'Finding user\'s avatar picture...')
+        args = message.content.split(' ', 1)
+        if len(args) != 2:
+            await client.send_message(tmp, 'Error: Incorrect number of parameters provided.')
+            return
+        member = discord.utils.find(lambda m: m.name == args[1], message.channel.server.members)
+        if member is not None:
+            await client.edit_message(tmp, '{}\'s avatar:\n{}' .format(member.name, member.avatar_url))
+        else:
+            await client.edit_message(tmp, 'Failed to find a user with that username in the channel.')
+
     elif message.content.startswith('#refresh'):
         tmp = await client.send_message(message.channel, 'Updating to newest settings')
         fh = open('profile.png', 'rb')
@@ -224,6 +235,7 @@ async def on_message(message):
         member = discord.utils.find(lambda m: m.name == args[1], message.channel.server.members)
         await client.ban(member)
         await client.edit_message(tmp, 'Fuck off {}.' .format(member.name))
+
 
 async def danbooru_search (message, method):
     tmp = await client.send_message(message.channel, 'Searching for posts in Danbooru...')
