@@ -2,6 +2,7 @@ import asyncio
 import json
 import random
 import re
+from collections import defaultdict
 from hashlib import md5
 
 import discord
@@ -9,6 +10,7 @@ import discord
 import danbooru
 import gelbooru
 import googleimages
+import help
 import quotes
 from classes import Memo
 
@@ -16,6 +18,7 @@ client = discord.Client()
 with open('credentials.json') as json_data:
     creds = json.load(json_data)
 tell = []
+mute = defaultdict(list)
 
 @client.event
 async def on_ready():
@@ -30,7 +33,9 @@ async def on_ready():
 @client.event
 async def on_message(message):
     args = ()
-    if message.content.startswith('-test'):
+    if message.server is not None and message.author in mute[message.server]:
+        await client.delete_message(message)
+    elif message.content.startswith('-test'):
         counter = 0
         tmp = await client.send_message(message.channel, 'Calculating messages...')
         async for log in client.logs_from(message.channel, limit=100):
@@ -41,6 +46,54 @@ async def on_message(message):
     elif message.content.startswith('-sleep'):
         await asyncio.sleep(5)
         await client.send_message(message.channel, 'Done sleeping')
+
+    elif message.content.startswith('-mute'):
+        if message.server is None:
+            await client.send_message(message.channel, 'Error: You can\'t mute here.')
+            return
+        if len(message.mentions) == 1:
+            mute[message.server].append(message.mentions[0])
+            await client.send_message(message.channel, 'Muting ``{}``.'.format(message.mentions[0].name))
+        else:
+            await client.send_message(message.channel, 'Error: You didn\'t specify a user, or specified too many.')
+    elif message.content.startswith('-unmute'):
+        if message.server is None:
+            await client.send_message(message.channel, 'Error: You can\'t unmute here.')
+            return
+        if len(message.mentions) == 1:
+            if message.mentions[0] in mute[message.server]:
+                mute[message.server].remove(message.mentions[0])
+                await client.send_message(message.channel, 'Unmuting ``{}``.'.format(message.mentions[0].name))
+            else:
+                await client.send_message(message.channel, '``{}`` isn\'t muted in the first place.'.format(message.mentions[0].name))
+        else:
+            await client.send_message(message.channel, 'Error: You didn\'t specify a user, or specified too many.')
+    elif message.content.startswith('-timeout'):
+        tmpx = await client.send_message(message.channel, 'Attempting to timeout user...')
+        if message.server is None:
+            await client.send_message(message.channel, 'Error: You can\'t timeout here.')
+            return
+        args = message.content.split(' ')
+        if len(args) < 3:
+            await client.edit_message(tmpx, 'Error: Parameters missing.')
+            return
+        if len(message.mentions) == 1:
+            mute[message.server].append(message.mentions[0])
+            if args[2].isdigit() and int(args[2]) < 86400:
+                time = int(args[2])
+            else:
+                await client.edit_message(tmpx, 'Error: Time must be a positive integer.')
+                return
+            await client.edit_message(tmpx, 'Timing out ``{}`` for ``{}`` seconds.'.format(message.mentions[0].name, time))
+            if message.mentions[0] not in mute[message.server]:
+                mute[message.server].append(message.mentions[0])
+            await asyncio.sleep(time)
+            await client.send_message(message.channel, 'Releasing ``{}`` from purgatory.'.format(message.mentions[0].name))
+            if message.mentions[0] in mute[message.server]:
+                mute[message.server].remove(message.mentions[0])
+        else:
+            await client.send_message(message.channel, 'Error: You didn\'t specify a user, or specified too many.')
+
 
     elif message.content.startswith('-memo'):
         tmp = await client.send_message(message.channel, 'Memo being processed...!')
@@ -59,8 +112,7 @@ async def on_message(message):
             await client.edit_message(tmp, 'Failed to find a user with that username in the channel.')
 
     elif message.content.startswith('-help'):
-        await client.send_message(message.channel, 'Help not received')
-
+        await client.send_message(message.author, help.helpMessage())
     elif message.content.startswith('-image'):
         tmp = await client.send_message(message.channel, 'Finding image...')
         args = message.content.split(' ', 1)
@@ -230,11 +282,12 @@ async def on_message(message):
         await client.edit_message(tmp, 'Finished updating!')
 
     elif message.content.startswith('#ban'):
-        tmp = await client.send_message(message.channel, 'Telling user to fuck off...')
-        args = message.content.split(' ', 1)
-        member = discord.utils.find(lambda m: m.name == args[1], message.channel.server.members)
-        await client.ban(member)
-        await client.edit_message(tmp, 'Fuck off {}.' .format(member.name))
+        tmp = await client.send_message(message.channel, 'Banning user..')
+        if len(message.mentions) == 1:
+            await client.ban(message.mentions[0])
+            await client.edit_message(tmp, 'Banned {}.'.format(message.mentions[0].name))
+        else:
+            await client.send_message(message.channel, 'Error: You didn\'t specify a user, or specified too many.')
 
 
 async def danbooru_search (message, method):
